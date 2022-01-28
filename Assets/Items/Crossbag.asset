@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46332187ea35c404eafb9e58d0fb405a, type: 3}
-  m_Name: Crossback
+  m_Name: Crossbag
   m_EditorClassIdentifier: 
-  _name: 
-  _description: 
+  _name: Crossbag
+  _description: Handy but small
   _sprite: {fileID: 0}
   _itemType: 4
   _stackable: 0
-  _rowLength: 0
-  _colLength: 0
-  _weight: 0
-  rowSize: 4
-  colSize: 2
+  _rowLength: 2
+  _colLength: 3
+  _weight: 1
+  _rowSize: 2
+  _colSize: 4

@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d41ab5125c72a0e4394deeaa58124e8b, type: 3}
   m_Name: Axe
   m_EditorClassIdentifier: 
-  name: 
-  description: 
-  sprite: {fileID: 0}
-  itemType: 0
-  stackable: 0
-  rowLength: 0
-  colLength: 0
-  weight: 0
+  _name: Axe
+  _description: Ready to run?
+  _sprite: {fileID: 0}
+  _itemType: 0
+  _stackable: 0
+  _rowLength: 3
+  _colLength: 1
+  _weight: 3

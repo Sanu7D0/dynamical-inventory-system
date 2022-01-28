@@ -2,11 +2,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Item", menuName = "Dynamic Inventory/Item/Weapon")]
-public class WeaponItem : Item
+namespace DynamicInventory
 {
-    public override void Use()
+    [CreateAssetMenu(fileName = "Item", menuName = "Dynamic Inventory/Item/Weapon")]
+    public class WeaponItem : Item
     {
-        throw new System.NotImplementedException();
+        public override Item Init()
+        {
+            return ScriptableObjectExt.Clone<WeaponItem>(this);
+        }
+
+        public override void Use()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
