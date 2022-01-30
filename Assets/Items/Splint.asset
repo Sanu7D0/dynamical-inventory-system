@@ -9,14 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d41ab5125c72a0e4394deeaa58124e8b, type: 3}
-  m_Name: Axe
+  m_Script: {fileID: 11500000, guid: 2f4ef68452cc9e24599ab64490c220a2, type: 3}
+  m_Name: Splint
   m_EditorClassIdentifier: 
-  _name: Axe
-  _description: Ready to run?
-  _sprite: {fileID: -1066109477, guid: 943131cdabfa1a3418a897437969a137, type: 3}
-  _itemType: 0
+  _name: Splint
+  _description: Fix your bones
+  _sprite: {fileID: -255676913, guid: 943131cdabfa1a3418a897437969a137, type: 3}
+  _itemType: 1
   _stackable: 0
-  _rowLength: 3
+  _rowLength: 1
   _colLength: 1
-  _weight: 3
+  _weight: 0.5

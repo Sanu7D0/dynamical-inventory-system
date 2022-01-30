@@ -18,7 +18,13 @@ namespace DynamicInventory
             get { return _colSize; }
         }
 
-        public Item[,] container;
+        public Item[,] container
+        {
+            get; private set;
+        }
+
+        public delegate void ContainerChangeHandler();
+        public event ContainerChangeHandler OnContainerChanged;
 
         public override Item Init()
         {
@@ -61,7 +67,7 @@ namespace DynamicInventory
                 }
             }
 
-            // Put the item reference at the target position
+            // Put the item reference at the target positions
             for (int r = targetR; r < targetR + itemRowLength; r++)
             {
                 for (int c = targetC; c < targetC + itemColLength; c++)
@@ -69,6 +75,7 @@ namespace DynamicInventory
                     container[r, c] = item;
                 }
             }
+            OnContainerChanged?.Invoke();
             return true;
         }
 
@@ -80,6 +87,7 @@ namespace DynamicInventory
                 {
                     if (TryPutItem(item, r, c))
                     {
+                        OnContainerChanged?.Invoke();
                         return true;
                     }
                 }
@@ -87,5 +95,28 @@ namespace DynamicInventory
             return false;
         }
 
+        public Item PullItem(int targetR, int targetC)
+        {
+            Item item = container[targetR, targetC];
+            if (item == null)
+            {
+                Debug.LogError($"Nothing to pull at [{targetR},{targetC}]");
+                return null;
+            }
+
+            int itemRowLength = (item.rotation == 0) ? item.rowLength : item.colLength;
+            int itemColLength = (item.rotation == 0) ? item.colLength : item.rowLength;
+
+            // Remove the item reference at the target positions
+            for (int r = targetR; r < targetR + itemRowLength; r++)
+            {
+                for (int c = targetC; c < targetC + itemColLength; c++)
+                {
+                    container[r, c] = null;
+                }
+            }
+            OnContainerChanged?.Invoke();
+            return item;
+        }
     }
 }
