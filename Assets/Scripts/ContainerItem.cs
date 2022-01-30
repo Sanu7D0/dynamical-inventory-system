@@ -7,8 +7,7 @@ namespace DynamicInventory
     [CreateAssetMenu(fileName = "Item", menuName = "Dynamic Inventory/Item/Container")]
     public class ContainerItem : Item
     {
-        [SerializeField]
-        private int _rowSize, _colSize;
+        [SerializeField] private int _rowSize, _colSize;
         public int rowSize
         {
             get { return _rowSize; }
