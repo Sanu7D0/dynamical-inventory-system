@@ -22,9 +22,6 @@ namespace DynamicInventory
             get; private set;
         }
 
-        public delegate void ContainerChangeHandler();
-        public event ContainerChangeHandler OnContainerChanged;
-
         public override Item Init()
         {
             ContainerItem clone = ScriptableObjectExt.Clone<ContainerItem>(this);
@@ -36,7 +33,7 @@ namespace DynamicInventory
 
         public override void Use() { }
 
-        public bool TryPutItem(Item item, int targetR, int targetC, int deltaRotation = 0)
+        public bool TryPutItem(Item item, int targetR, int targetC, int rotation)
         {
             if (targetR < 0 || targetR >= rowSize || targetC < 0 || targetR >= colSize)
             {
@@ -45,8 +42,8 @@ namespace DynamicInventory
             }
 
             // If item is rotated 90 degree, swap row and column length
-            int itemRowLength = (item.rotation + deltaRotation == 0) ? item.rowLength : item.colLength;
-            int itemColLength = (item.rotation + deltaRotation == 0) ? item.colLength : item.rowLength;
+            int itemRowLength = (rotation == 0) ? item.rowLength : item.colLength;
+            int itemColLength = (rotation == 0) ? item.colLength : item.rowLength;
 
             // Check if item is out of container size
             if (targetR + itemRowLength > rowSize || targetC + itemColLength > colSize)
@@ -74,27 +71,40 @@ namespace DynamicInventory
                     container[r, c] = item;
                 }
             }
-            OnContainerChanged?.Invoke();
             return true;
         }
 
-        public bool TryPushItem(Item item)
+        public bool TryPushItem(Item item, out int R, out int C, out int rotation)
         {
             for (int r = 0; r < rowSize; r++)
             {
                 for (int c = 0; c < colSize; c++)
                 {
-                    if (TryPutItem(item, r, c))
+                    if (container[r, c] == null)
                     {
-                        OnContainerChanged?.Invoke();
-                        return true;
+                        R = r;
+                        C = c;
+                        // Try put item in both rotation
+                        if (TryPutItem(item, r, c, 0))
+                        {
+                            rotation = 0;
+                            return true;
+                        }
+                        else if (TryPutItem(item, r, c, 1))
+                        {
+                            rotation = 1;
+                            return true;
+                        }
                     }
                 }
             }
+            R = 0;
+            C = 0;
+            rotation = 0;
             return false;
         }
 
-        public Item PullItem(int targetR, int targetC)
+        public Item PullItem(int targetR, int targetC, int rotation)
         {
             Item item = container[targetR, targetC];
             if (item == null)
@@ -103,8 +113,8 @@ namespace DynamicInventory
                 return null;
             }
 
-            int itemRowLength = (item.rotation == 0) ? item.rowLength : item.colLength;
-            int itemColLength = (item.rotation == 0) ? item.colLength : item.rowLength;
+            int itemRowLength = (rotation == 0) ? item.rowLength : item.colLength;
+            int itemColLength = (rotation == 0) ? item.colLength : item.rowLength;
 
             // Remove the item reference at the target positions
             for (int r = targetR; r < targetR + itemRowLength; r++)
@@ -114,7 +124,6 @@ namespace DynamicInventory
                     container[r, c] = null;
                 }
             }
-            OnContainerChanged?.Invoke();
             return item;
         }
     }

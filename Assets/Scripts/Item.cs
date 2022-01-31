@@ -40,25 +40,10 @@ namespace DynamicInventory
 
         [SerializeField] private float _weight;
         public float weight { get { return _weight; } }
-
-        public int rotation { get; private set; } = 0;
         #endregion
 
         public abstract Item Init();
 
         public abstract void Use();
-
-        // Rotate the item 90 degree to clock-wise in inventory
-        // 0, 90 = 0, 1
-        public void Rotate(int deltaRot)
-        {
-            // Cannot rotate square-shaped item
-            if (rowLength == colLength)
-            {
-                return;
-            }
-
-            rotation = Mathf.Abs(rotation + deltaRot) % 2;
-        }
     }
 }

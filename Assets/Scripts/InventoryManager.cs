@@ -24,11 +24,18 @@ namespace DynamicInventory
                 test_items[i] = test_items[i].Init();
             }
 
-            test_items[0].Rotate(1);
             foreach (Item item in test_items)
             {
-                Debug.Log(container1.containerItem.TryPushItem(item));
+                Debug.Log(container1.TryPushItem(item));
             }
+
+            StartCoroutine(testRoutine());
+        }
+
+        IEnumerator testRoutine()
+        {
+            yield return new WaitForEndOfFrame();
+            container1.UpdateContainer();
         }
     }
 }
