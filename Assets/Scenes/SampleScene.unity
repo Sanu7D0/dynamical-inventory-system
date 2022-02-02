@@ -308,6 +308,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1318489951, guid: 91b7c341a0f3d6248b4b25a5c8f1b4cd, type: 3}
+      propertyPath: m_DragThreshold
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 612656427789867579, guid: 91b7c341a0f3d6248b4b25a5c8f1b4cd, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -371,6 +375,10 @@ PrefabInstance:
     - target: {fileID: 2388227317749768478, guid: 91b7c341a0f3d6248b4b25a5c8f1b4cd, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5724614487259863292, guid: 91b7c341a0f3d6248b4b25a5c8f1b4cd, type: 3}
+      propertyPath: m_RaycastTarget
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8226372394132298778, guid: 91b7c341a0f3d6248b4b25a5c8f1b4cd, type: 3}
       propertyPath: m_RootOrder

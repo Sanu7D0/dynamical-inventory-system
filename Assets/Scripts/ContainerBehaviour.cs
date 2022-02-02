@@ -13,31 +13,17 @@ namespace DynamicInventory
             private set { _containerItem = value; }
         }
         [SerializeField] private RectTransform containerGrid;
-        [SerializeField] private RectTransform itemHolders;
-        [SerializeField] private GameObject cellPrefab;
-        [SerializeField] private GameObject itemHolderPrefab;
-        [SerializeField] private DragAndDropHolder dragAndDropHolder;
+        [SerializeField] private RectTransform _itemHolders;
+        public RectTransform itemHolders { get { return _itemHolders; } }
 
-        private struct ItemHolder
+        public Dictionary<int, ItemHolderBehaviour> itemHolderMap
         {
-            public ItemHolder(RectTransform transform, int r, int c, int rotation)
-            {
-                this.transform = transform;
-                this.r = r;
-                this.c = c;
-                this.rotation = rotation;
-            }
-
-            public RectTransform transform { get; }
-            public int r, c;
-            public int rotation;
+            get;
+            private set;
         }
-        private Dictionary<int, ItemHolder> itemHolderMap;
 
         public delegate void ContainerChangeHandler();
         public event ContainerChangeHandler OnContainerChanged;
-
-        public int CELL_SIZE = 100;
 
         private void Awake()
         {
@@ -51,18 +37,19 @@ namespace DynamicInventory
 
         private void Start()
         {
-            itemHolderMap = new Dictionary<int, ItemHolder>();
+            itemHolderMap = new Dictionary<int, ItemHolderBehaviour>();
 
             int col = containerItem.colSize;
             int row = containerItem.rowSize;
-            containerGrid.sizeDelta = CELL_SIZE * new Vector2(col, row);
+            containerGrid.sizeDelta = GlobalData.cellSize * new Vector2(col, row);
 
             GridLayoutGroup grid = containerGrid.GetComponent<GridLayoutGroup>();
             grid.constraintCount = col;
 
             for (int i = 0; i < row * col; i++)
             {
-                GameObject cell = Instantiate(cellPrefab, Vector3.zero, Quaternion.identity);
+                GameObject cell =
+                    Instantiate(InventoryManager.Instance.containerCellPrefab, Vector3.zero, Quaternion.identity);
                 cell.transform.SetParent(grid.transform);
             }
         }
@@ -98,22 +85,25 @@ namespace DynamicInventory
             return false;
         }
 
-        public Item PullItem(int id)
+        public bool TryPullItem(Item item, bool clearMap = false)
         {
-            // TODO
-            Item item = containerItem.PullItem(0, 0, 0);
-            if (item != null)
+            if (containerItem.TryPullItem(item))
             {
+                if (clearMap)
+                {
+                    itemHolderMap.Remove(item.GetInstanceID());
+                }
 
                 OnContainerChanged?.Invoke();
+                return true;
             }
-            return item;
+            return false;
         }
 
         public void UpdateContainer()
         {
             RectTransform cell;
-            foreach (ItemHolder itemHolder in itemHolderMap.Values)
+            foreach (ItemHolderBehaviour itemHolder in itemHolderMap.Values)
             {
                 cell = containerGrid.GetChild(
                     itemHolder.r * containerItem.colSize + itemHolder.c) as RectTransform;
@@ -122,21 +112,19 @@ namespace DynamicInventory
                 if (itemHolder.rotation == 1)
                 {
                     itemHolder.transform.Rotate(new Vector3(0, 0, -90));
-                    itemHolder.transform.position += Vector3.down * CELL_SIZE;
+                    itemHolder.transform.position += Vector3.down * GlobalData.cellSize;
                 }
             }
         }
 
-        private RectTransform CreateItemHolder(Item item)
+        private ItemHolderBehaviour CreateItemHolder(Item item, int r, int c, int rotation)
         {
-            RectTransform newItemHolder =
-                GameObject.Instantiate(itemHolderPrefab, Vector3.zero, Quaternion.identity)
-                .GetComponent<RectTransform>();
-            newItemHolder.SetParent(itemHolders);
-            newItemHolder.sizeDelta = CELL_SIZE * new Vector2(item.colLength, item.rowLength);
+            ItemHolderBehaviour newItemHolder =
+                GameObject.Instantiate(InventoryManager.Instance.itemHolderPrefab, Vector3.zero, Quaternion.identity)
+                .GetComponent<ItemHolderBehaviour>();
 
-            newItemHolder.GetComponent<ItemHolderBehaviour>()
-                .Init(item, this, dragAndDropHolder);
+            newItemHolder.GetComponent<RectTransform>().SetParent(itemHolders);
+            newItemHolder.Init(item, r, c, rotation, this);
 
             return newItemHolder;
         }
@@ -146,15 +134,53 @@ namespace DynamicInventory
             int id = item.GetInstanceID();
             if (itemHolderMap.ContainsKey(id))
             {
-                ItemHolder itemHolder = itemHolderMap[id];
-                itemHolder.r = r;
-                itemHolder.c = c;
-                itemHolder.rotation = rotation;
+                itemHolderMap[id].Set(r, c, rotation);
             }
             else
             {
-                RectTransform newItemHolder = CreateItemHolder(item);
-                itemHolderMap.Add(id, new ItemHolder(newItemHolder, r, c, rotation));
+                itemHolderMap.Add(id, CreateItemHolder(item, r, c, rotation));
+            }
+        }
+
+        public void DropItem(int index)
+        {
+            Debug.Log($"Received item drop on {index}");
+            DragAndDropHolder dragDropHolder = InventoryManager.Instance.dragAndDropHolder;
+            ItemHolderBehaviour itemHolder = dragDropHolder.originItemHolder;
+
+            // Pull the item before put it
+            bool isTransferred = false;
+            if (!containerItem.TryPullItem(itemHolder.item))
+            {
+                // Item holder is from another container -> transfer later
+                isTransferred = true;
+            }
+
+            int targetR = index / containerItem.colSize,
+                targetC = index % containerItem.colSize,
+                targetRotaion = itemHolder.rotation + itemHolder.deltaRotation;
+            if (containerItem.TryPutItem(itemHolder.item, targetR, targetC, targetRotaion))
+            {
+                // Succeed to put item
+                if (isTransferred)
+                {
+                    // If transfereed, pull from the origin container and change container
+                    itemHolder.PullSelf();
+
+                    itemHolder.SetContainer(this);
+                    itemHolderMap.Add(itemHolder.item.GetInstanceID(), itemHolder);
+                }
+                itemHolder.Set(targetR, targetC, targetRotaion);
+
+                OnContainerChanged?.Invoke();
+            }
+            else
+            {
+                // Failed to put item -> back to original position
+                if (!isTransferred)
+                {
+                    containerItem.TryPutItem(itemHolder.item, itemHolder.r, itemHolder.c, itemHolder.rotation);
+                }
             }
         }
     }

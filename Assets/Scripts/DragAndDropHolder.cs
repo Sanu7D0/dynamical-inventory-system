@@ -5,9 +5,9 @@ namespace DynamicInventory
 {
     public class DragAndDropHolder : MonoBehaviour
     {
+        [SerializeField] private Image image;
         private RectTransform rectTransform;
-        public Image image;
-        public Item originItem;
+        public ItemHolderBehaviour originItemHolder { get; private set; }
 
         private void Awake()
         {
@@ -25,6 +25,13 @@ namespace DynamicInventory
             rectTransform.sizeDelta = holderTransform.rect.size;
             rectTransform.rotation = holderTransform.rotation;
             image.sprite = itemHolder.item.sprite;
+            originItemHolder = itemHolder;
+        }
+
+        public void Clear()
+        {
+            originItemHolder = null;
+            image.sprite = null;
         }
     }
 }

@@ -35,9 +35,31 @@ namespace DynamicInventory
 
         public bool TryPutItem(Item item, int targetR, int targetC, int rotation)
         {
+            if (!CanPutItem(item, targetR, targetC, rotation))
+            {
+                return false;
+            }
+
+            // If item is rotated 90 degree, swap row and column length
+            int itemRowLength = (rotation == 0) ? item.rowLength : item.colLength;
+            int itemColLength = (rotation == 0) ? item.colLength : item.rowLength;
+
+            // Put the item reference at the target positions
+            for (int r = targetR; r < targetR + itemRowLength; r++)
+            {
+                for (int c = targetC; c < targetC + itemColLength; c++)
+                {
+                    container[r, c] = item;
+                }
+            }
+            return true;
+        }
+
+        public bool CanPutItem(Item item, int targetR, int targetC, int rotation)
+        {
             if (targetR < 0 || targetR >= rowSize || targetC < 0 || targetR >= colSize)
             {
-                Debug.LogError("TryPutItem: Index out of range");
+                Debug.LogError("Index out of range");
                 return false;
             }
 
@@ -63,14 +85,6 @@ namespace DynamicInventory
                 }
             }
 
-            // Put the item reference at the target positions
-            for (int r = targetR; r < targetR + itemRowLength; r++)
-            {
-                for (int c = targetC; c < targetC + itemColLength; c++)
-                {
-                    container[r, c] = item;
-                }
-            }
             return true;
         }
 
@@ -104,27 +118,21 @@ namespace DynamicInventory
             return false;
         }
 
-        public Item PullItem(int targetR, int targetC, int rotation)
+        public bool TryPullItem(Item item)
         {
-            Item item = container[targetR, targetC];
-            if (item == null)
+            bool result = false;
+            for (int i = 0; i < container.GetLength(0); i++)
             {
-                Debug.LogError($"Nothing to pull at [{targetR},{targetC}]");
-                return null;
-            }
-
-            int itemRowLength = (rotation == 0) ? item.rowLength : item.colLength;
-            int itemColLength = (rotation == 0) ? item.colLength : item.rowLength;
-
-            // Remove the item reference at the target positions
-            for (int r = targetR; r < targetR + itemRowLength; r++)
-            {
-                for (int c = targetC; c < targetC + itemColLength; c++)
+                for (int j = 0; j < container.GetLength(1); j++)
                 {
-                    container[r, c] = null;
+                    if (container[i, j] == item)
+                    {
+                        result = true;
+                        container[i, j] = null;
+                    }
                 }
             }
-            return item;
+            return result;
         }
     }
 }

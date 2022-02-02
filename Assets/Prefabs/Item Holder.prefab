@@ -136,8 +136,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13da865bfaa963849bac374354066d14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _image: {fileID: 6533384534367070562}
-  _background: {fileID: 8043054895508261481}
+  itemImage: {fileID: 6533384534367070562}
+  background: {fileID: 8043054895508261481}
 --- !u!1 &8678260250343434873
 GameObject:
   m_ObjectHideFlags: 0

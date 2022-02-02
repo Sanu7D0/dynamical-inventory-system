@@ -7,6 +7,11 @@ namespace DynamicInventory
 {
     sealed public class InventoryManager : Singleton<InventoryManager>
     {
+        public GameObject containerCellPrefab;
+        public GameObject itemHolderPrefab;
+        [SerializeField] private DragAndDropHolder _dragAndDropHolder;
+        public DragAndDropHolder dragAndDropHolder { get { return _dragAndDropHolder; } }
+
         public Item[] test_items;
 
         public ContainerBehaviour container1;
