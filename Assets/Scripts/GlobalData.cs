@@ -4,6 +4,11 @@ namespace DynamicInventory
 {
     public static class GlobalData
     {
-        public static int cellSize { get; } = 100;
+        public static readonly int cellSize = 100;
+
+        public readonly struct CellColors
+        {
+
+        }
     }
 }

@@ -51,6 +51,7 @@ namespace DynamicInventory
                 GameObject cell =
                     Instantiate(InventoryManager.Instance.containerCellPrefab, Vector3.zero, Quaternion.identity);
                 cell.transform.SetParent(grid.transform);
+                cell.GetComponent<ContainerCellBehaviour>().Set(this);
             }
         }
 
@@ -111,7 +112,7 @@ namespace DynamicInventory
                 itemHolder.transform.position = cell.position;
                 if (itemHolder.rotation == 1)
                 {
-                    itemHolder.transform.Rotate(new Vector3(0, 0, -90));
+                    itemHolder.transform.rotation = Quaternion.Euler(0, 0, 90);
                     itemHolder.transform.position += Vector3.down * GlobalData.cellSize;
                 }
             }
