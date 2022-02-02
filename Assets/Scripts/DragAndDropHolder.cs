@@ -6,7 +6,7 @@ namespace DynamicInventory
     public class DragAndDropHolder : MonoBehaviour
     {
         [SerializeField] private Image image;
-        private RectTransform rectTransform;
+        public RectTransform rectTransform { get; private set; }
         public ItemHolderBehaviour originItemHolder { get; private set; }
 
         private void Awake()
@@ -23,9 +23,15 @@ namespace DynamicInventory
         {
             RectTransform holderTransform = itemHolder.GetComponent<RectTransform>();
             rectTransform.sizeDelta = holderTransform.rect.size;
-            rectTransform.rotation = holderTransform.rotation;
             image.sprite = itemHolder.item.sprite;
             originItemHolder = itemHolder;
+            Rotate(itemHolder.rotation);
+        }
+
+        public void Rotate(int rotation)
+        {
+            rotation %= 2;
+            rectTransform.rotation = (rotation == 1) ? Quaternion.Euler(0, 0, 90) : Quaternion.identity;
         }
 
         public void Clear()

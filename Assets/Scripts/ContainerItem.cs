@@ -57,6 +57,12 @@ namespace DynamicInventory
 
         public bool CanPutItem(Item item, int targetR, int targetC, int rotation)
         {
+            if (item == null)
+            {
+                Debug.LogError("Cannot put null");
+                return false;
+            }
+
             if (targetR < 0 || targetR >= rowSize || targetC < 0 || targetR >= colSize)
             {
                 Debug.LogError("Index out of range");

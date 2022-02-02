@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace DynamicInventory
 {
-    public class ItemHolderBehaviour : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHandler
+    public class ItemHolderBehaviour : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField] private Image itemImage;
         [SerializeField] private Image background;
@@ -12,7 +12,12 @@ namespace DynamicInventory
         private RectTransform rectTransform;
         private ContainerBehaviour containerBehaviour;
         private DragAndDropHolder dragAndDropHolder;
-        private bool isDragging;
+        private bool isDragging
+        {
+            get { return InventoryManager.Instance.isDragging; }
+            set { InventoryManager.Instance.isDragging = value; }
+        }
+        private Color32 idleColor;
 
         public Item item { get; private set; }
         public int rotation { get; private set; }
@@ -28,6 +33,7 @@ namespace DynamicInventory
         private void Start()
         {
             dragAndDropHolder = InventoryManager.Instance.dragAndDropHolder;
+            idleColor = GlobalData.ItemHolderColors.ItemColor(item.itemType);
         }
 
         public void Init(Item item, int r, int c, int rotation, ContainerBehaviour containerBehaviour)
@@ -40,8 +46,8 @@ namespace DynamicInventory
 
             rectTransform.sizeDelta = GlobalData.cellSize * new Vector2(item.colLength, item.rowLength);
             itemImage.sprite = item.sprite;
+            SetColor(GlobalData.ItemHolderColors.idle);
 
-            isDragging = false;
             deltaRotation = 0;
         }
 
@@ -49,7 +55,9 @@ namespace DynamicInventory
         {
             this.r = r;
             this.c = c;
-            this.rotation = rotation;
+            this.rotation = rotation % 2;
+
+            rectTransform.rotation = (rotation == 1) ? Quaternion.Euler(0, 0, 90) : Quaternion.identity;
         }
 
         public void SetContainer(ContainerBehaviour target)
@@ -66,15 +74,31 @@ namespace DynamicInventory
             containerBehaviour.TryPullItem(item);
         }
 
-        public void OnBeginDrag(PointerEventData eventData)
+        private void HandleRotate()
         {
-            if (item == null)
+            if (!isDragging)
                 return;
 
+            if (item.rowLength == item.colLength)
+                return;
+
+            deltaRotation = (deltaRotation + 1) % 2;
+            dragAndDropHolder.Rotate(rotation + deltaRotation);
+
+            containerBehaviour.SetColorIndicator(true);
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
             isDragging = true;
 
+            background.raycastTarget = false;
             dragAndDropHolder.gameObject.SetActive(true);
             dragAndDropHolder.ImitateItemHolder(this);
+
+            PullSelf();
+
+            InventoryManager.Instance.inventoryController.OnRotate += HandleRotate;
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -82,24 +106,43 @@ namespace DynamicInventory
             if (!isDragging)
                 return;
 
-            // if shift
-            // deltaRotation = ++deltaRotation % 2;
-
-            dragAndDropHolder.transform.position = eventData.position;
+            dragAndDropHolder.rectTransform.position = eventData.position;
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            if (isDragging)
-            {
-
-            }
+            if (!isDragging)
+                return;
 
             isDragging = false;
-            deltaRotation = 0;
+            background.raycastTarget = true;
 
+            deltaRotation = 0;
             dragAndDropHolder.Clear();
             dragAndDropHolder.gameObject.SetActive(false);
+
+            InventoryManager.Instance.inventoryController.OnRotate -= HandleRotate;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (isDragging)
+                return;
+
+            SetColor(GlobalData.ItemHolderColors.focused);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (isDragging)
+                return;
+
+            SetColor(GlobalData.ItemHolderColors.idle);
+        }
+
+        private void SetColor(Color32 color)
+        {
+            background.color = color;
         }
     }
 }

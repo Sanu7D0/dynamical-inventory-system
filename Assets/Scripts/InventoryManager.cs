@@ -7,22 +7,28 @@ namespace DynamicInventory
 {
     sealed public class InventoryManager : Singleton<InventoryManager>
     {
+        [SerializeField] private DragAndDropHolder _dragAndDropHolder;
+
         public GameObject containerCellPrefab;
         public GameObject itemHolderPrefab;
-        [SerializeField] private DragAndDropHolder _dragAndDropHolder;
         public DragAndDropHolder dragAndDropHolder { get { return _dragAndDropHolder; } }
+        public InventoryController inventoryController { get; private set; }
+        public bool isDragging;
 
         public Item[] test_items;
-
         public ContainerBehaviour container1;
 
         protected override void Awake()
         {
             base.Awake();
+
+            inventoryController = GetComponent<InventoryController>();
         }
 
         private void Start()
         {
+            isDragging = false;
+
             // Test
             for (int i = 0; i < test_items.Length; i++)
             {

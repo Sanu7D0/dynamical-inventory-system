@@ -25,6 +25,8 @@ namespace DynamicInventory
         public delegate void ContainerChangeHandler();
         public event ContainerChangeHandler OnContainerChanged;
 
+        public int focusingIndex;
+
         private void Awake()
         {
             containerItem = containerItem.Init() as ContainerItem;
@@ -33,6 +35,7 @@ namespace DynamicInventory
         private void OnEnable()
         {
             OnContainerChanged += UpdateContainer;
+            focusingIndex = -1;
         }
 
         private void Start()
@@ -86,14 +89,11 @@ namespace DynamicInventory
             return false;
         }
 
-        public bool TryPullItem(Item item, bool clearMap = false)
+        public bool TryPullItem(Item item)
         {
             if (containerItem.TryPullItem(item))
             {
-                if (clearMap)
-                {
-                    itemHolderMap.Remove(item.GetInstanceID());
-                }
+                itemHolderMap.Remove(item.GetInstanceID());
 
                 OnContainerChanged?.Invoke();
                 return true;
@@ -110,9 +110,9 @@ namespace DynamicInventory
                     itemHolder.r * containerItem.colSize + itemHolder.c) as RectTransform;
 
                 itemHolder.transform.position = cell.position;
+                // Pivot compensation
                 if (itemHolder.rotation == 1)
                 {
-                    itemHolder.transform.rotation = Quaternion.Euler(0, 0, 90);
                     itemHolder.transform.position += Vector3.down * GlobalData.cellSize;
                 }
             }
@@ -143,46 +143,85 @@ namespace DynamicInventory
             }
         }
 
-        public void DropItem(int index)
+        public bool TryDropItem(int idx)
         {
-            Debug.Log($"Received item drop on {index}");
-            DragAndDropHolder dragDropHolder = InventoryManager.Instance.dragAndDropHolder;
-            ItemHolderBehaviour itemHolder = dragDropHolder.originItemHolder;
+            GetDropTarget(idx, out Item item, out int r, out int c, out int rotation);
+            ItemHolderBehaviour itemHolder =
+                InventoryManager.Instance.dragAndDropHolder.originItemHolder;
 
-            // Pull the item before put it
-            bool isTransferred = false;
-            if (!containerItem.TryPullItem(itemHolder.item))
-            {
-                // Item holder is from another container -> transfer later
-                isTransferred = true;
-            }
-
-            int targetR = index / containerItem.colSize,
-                targetC = index % containerItem.colSize,
-                targetRotaion = itemHolder.rotation + itemHolder.deltaRotation;
-            if (containerItem.TryPutItem(itemHolder.item, targetR, targetC, targetRotaion))
+            if (containerItem.TryPutItem(item, r, c, rotation))
             {
                 // Succeed to put item
-                if (isTransferred)
-                {
-                    // If transfereed, pull from the origin container and change container
-                    itemHolder.PullSelf();
+                itemHolder.SetContainer(this);
+                itemHolder.Set(r, c, rotation);
 
-                    itemHolder.SetContainer(this);
-                    itemHolderMap.Add(itemHolder.item.GetInstanceID(), itemHolder);
-                }
-                itemHolder.Set(targetR, targetC, targetRotaion);
+                itemHolderMap.Add(itemHolder.item.GetInstanceID(), itemHolder);
 
                 OnContainerChanged?.Invoke();
+
+                return true;
             }
             else
             {
                 // Failed to put item -> back to original position
-                if (!isTransferred)
+                containerItem.TryPutItem(itemHolder.item, itemHolder.r, itemHolder.c, itemHolder.rotation);
+                return false;
+            }
+        }
+
+        public bool CanDropItem(int idx)
+        {
+            GetDropTarget(idx, out Item item, out int r, out int c, out int rotation);
+
+            return containerItem.CanPutItem(item, r, c, rotation);
+        }
+
+        public void SetColorIndicator(bool flush = false)
+        {
+            if (focusingIndex == -1 || flush)
+            {
+                for (int r = 0; r < containerItem.rowSize; r++)
                 {
-                    containerItem.TryPutItem(itemHolder.item, itemHolder.r, itemHolder.c, itemHolder.rotation);
+                    for (int c = 0; c < containerItem.colSize; c++)
+                    {
+                        containerGrid.GetChild(r * containerItem.colSize + c)
+                        .GetComponent<ContainerCellBehaviour>().SetColor(GlobalData.ItemHolderColors.idle);
+                    }
+                }
+
+                if (focusingIndex == -1)
+                    return;
+            }
+
+            GetDropTarget(focusingIndex, out Item item, out int R, out int C, out int rotation);
+
+            Color32 indicator =
+                CanDropItem(focusingIndex) ? GlobalData.ItemHolderColors.green : GlobalData.ItemHolderColors.red;
+
+            // If item is rotated 90 degree, swap row and column length
+            int itemRowLength = (rotation == 0) ? item.rowLength : item.colLength;
+            int itemColLength = (rotation == 0) ? item.colLength : item.rowLength;
+
+            // Put the item reference at the target positions
+            for (int r = R; r < Mathf.Min(R + itemRowLength, containerItem.rowSize); r++)
+            {
+                for (int c = C; c < Mathf.Min(C + itemColLength, containerItem.colSize); c++)
+                {
+                    containerGrid.GetChild(r * containerItem.colSize + c)
+                        .GetComponent<ContainerCellBehaviour>().SetColor(indicator);
                 }
             }
+        }
+
+        private void GetDropTarget(int idx, out Item item, out int r, out int c, out int rotation)
+        {
+            DragAndDropHolder dragDropHolder = InventoryManager.Instance.dragAndDropHolder;
+            ItemHolderBehaviour itemHolder = dragDropHolder.originItemHolder;
+
+            item = itemHolder.item;
+            r = idx / containerItem.colSize;
+            c = idx % containerItem.colSize;
+            rotation = (itemHolder.rotation + itemHolder.deltaRotation) % 2;
         }
     }
 }
